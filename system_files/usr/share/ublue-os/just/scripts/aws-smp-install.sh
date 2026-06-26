@@ -7,7 +7,21 @@ usage(){
 }
 
 cmd=${1:-}
-[ -n "${cmd}" ] || usage
+if [ -z "${cmd}" ]; then
+  echo ""
+  echo "☁️ AWS CLI & Session Manager Plugin — what do you want to do?"
+  echo ""
+  select choice in "Status" "Install" "Update" "Remove" "Exit"; do
+    case "$choice" in
+      Status)  cmd=status;  break ;;
+      Install) cmd=install; break ;;
+      Update)  cmd=update;  break ;;
+      Remove)  cmd=remove;  break ;;
+      Exit)    exit 0 ;;
+      *) echo "Invalid selection." ;;
+    esac
+  done
+fi
 
 TMPDIR=$(mktemp -d)
 cleanup(){ rm -rf "$TMPDIR"; }
@@ -110,22 +124,22 @@ remove_smp(){
 }
 
 status(){
-  echo "-- PATH includes $LOCAL_BIN? --"
+  echo "🔗 PATH includes $LOCAL_BIN?"
   if check_path; then
-    echo "Yes: $LOCAL_BIN is in PATH"
+    echo "✅ $LOCAL_BIN is in PATH"
   else
-    echo "No: $LOCAL_BIN is NOT in PATH"
+    echo "❌ $LOCAL_BIN is NOT in PATH"
     echo "Add: export PATH=\"$HOME/.local/bin:\$PATH\" to your shell rc (e.g., ~/.profile, ~/.bashrc)"
   fi
 
-  echo "-- aws --"
+  echo ">_ aws"
   if command -v aws >/dev/null 2>&1; then
     aws --version 2>&1 | head -n1
   else
     echo "aws: not found"
   fi
 
-  echo "-- session-manager-plugin --"
+  echo "🔑 session-manager-plugin"
   if command -v session-manager-plugin >/dev/null 2>&1; then
     session-manager-plugin --version 2>&1 | head -n1 || true
   else
