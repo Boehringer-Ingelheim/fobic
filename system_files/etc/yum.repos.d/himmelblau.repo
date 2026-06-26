@@ -1,0 +1,7 @@
+[himmelblau]
+name=Himmelblau (fedora43, stable 3.1.7)
+baseurl=https://packages.himmelblau-idm.org/stable/3.1.7/rpm/fedora43/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.himmelblau-idm.org/himmelblau.asc
