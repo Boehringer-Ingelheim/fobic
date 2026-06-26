@@ -1,0 +1,27 @@
+[customizations.installer.kickstart]
+contents = """
+# Don't create any users and lock the root password, so that the system is only accessible via himmelblau
+rootpw --lock
+# TODO possible options for himmelblau
+#user --name=fobic --lock
+
+%post
+bootc switch --mutate-in-place --transport registry ghcr.io/Boehringer-Ingelheim/fobic:latest
+%end
+"""
+
+[customizations.installer.modules]
+enable = [
+  "org.fedoraproject.Anaconda.Modules.Storage",
+  "org.fedoraproject.Anaconda.Modules.Runtime",
+  "org.fedoraproject.Anaconda.Modules.Localization",
+  "org.fedoraproject.Anaconda.Modules.Network",
+  "org.fedoraproject.Anaconda.Modules.Security",
+  "org.fedoraproject.Anaconda.Modules.Services",
+  "org.fedoraproject.Anaconda.Modules.Users",
+  "org.fedoraproject.Anaconda.Modules.Timezone"
+]
+
+disable = [
+  "org.fedoraproject.Anaconda.Modules.Subscription",
+]
