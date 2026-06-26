@@ -2,12 +2,25 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 enable|disable"
+  echo "Usage: $0 status|enable|disable"
   exit 2
 }
 
 cmd=${1:-}
-[ -n "$cmd" ] || usage
+if [ -z "$cmd" ]; then
+  echo ""
+  echo "🔑 SSH key agent — what do you want to do?"
+  echo ""
+  select choice in "Status" "Enable" "Disable" "Exit"; do
+    case "$choice" in
+      Status)  cmd=status;  break ;;
+      Enable)  cmd=enable;  break ;;
+      Disable) cmd=disable; break ;;
+      Exit)    exit 0 ;;
+      *) echo "Invalid selection." ;;
+    esac
+  done
+fi
 
 UNIT_PATH="$HOME/.config/systemd/user/ssh-add.service"
 SSH_DIR="$HOME/.ssh"
@@ -29,6 +42,8 @@ select_keys() {
 
   # Use fzf if available (multi-select)
   if command -v fzf >/dev/null 2>&1; then
+    echo "Use Tab to select/deselect keys, Enter to confirm, type to filter."
+    echo ""
     mapfile -t selected < <(printf '%s\n' "${keys[@]}" | fzf -m --prompt="Select SSH keys > ")
   else
     echo "Select SSH keys (enter numbers, empty line to finish):"
@@ -41,6 +56,31 @@ select_keys() {
 }
 
 case "$cmd" in
+  status)
+    echo ""
+    if systemctl --user is-enabled ssh-add.service >/dev/null 2>&1; then
+      echo "✅ ssh-add.service is enabled"
+
+      echo ""
+      if systemctl --user is-active ssh-agent.service >/dev/null 2>&1; then
+        echo "✅ ssh-agent.service is running"
+      else
+        echo "⚠ ssh-agent.service is not running"
+      fi
+    else
+      echo "⚠ ssh-add.service is not enabled"
+    fi
+
+    echo ""
+    echo "🔑 Keys loaded in agent --"
+    if ssh-add -l 2>/dev/null; then
+      : # output already printed
+    else
+      echo "❌ No keys loaded (or agent not running)"
+    fi
+    echo ""
+    ;;
+
   enable)
     mkdir -p "$(dirname "$UNIT_PATH")"
 

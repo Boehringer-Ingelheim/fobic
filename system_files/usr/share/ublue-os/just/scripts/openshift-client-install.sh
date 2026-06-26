@@ -7,7 +7,21 @@ usage(){
 }
 
 cmd=${1:-}
-[ -n "${cmd}" ] || usage
+if [ -z "${cmd}" ]; then
+  echo ""
+  echo "🪐 OpenShift client — what do you want to do?"
+  echo ""
+  select choice in "Install" "Update" "Remove" "Status" "Cancel"; do
+    case "$choice" in
+      Install) cmd=install; break ;;
+      Update)  cmd=update;  break ;;
+      Remove)  cmd=remove;  break ;;
+      Status)  cmd=status;  break ;;
+      Cancel)  echo "Cancelled."; exit 0 ;;
+      *) echo "Invalid selection." ;;
+    esac
+  done
+fi
 
 TMPDIR=$(mktemp -d)
 cleanup(){ rm -rf "$TMPDIR"; }
