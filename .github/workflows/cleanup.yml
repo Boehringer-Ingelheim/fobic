@@ -1,0 +1,115 @@
+---
+name: Cleanup container images
+
+# Prunes old GHCR versions per stream so the package doesn't grow unbounded.
+#
+# Requires either:
+#   - the GHCR package "fobic" has "Manage Actions access" set to grant this
+#     repo the Admin role (lets the default GITHUB_TOKEN delete versions), or
+#   - a repo secret PACKAGE_CLEANUP_TOKEN: a classic PAT with the
+#     read:packages + delete:packages scopes, used as a fallback below.
+
+on:
+  schedule:
+    - cron: "30 3 * * *" # Daily at 03:30 UTC
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: fobic
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  cleanup-stable:
+    name: Cleanup stable-* versions
+    runs-on: ubuntu-24.04
+    steps:
+      # This action is not yet pinned to a commit SHA; Renovate will open an
+      # automerging "pin" PR to convert this to a digest, matching this repo's
+      # convention for other third-party actions.
+      - name: Delete old stable-* versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ env.IMAGE_NAME }}
+          package-type: container
+          min-versions-to-keep: 2
+          ignore-versions: "^(?!stable).*$"
+          token: ${{ secrets.PACKAGE_CLEANUP_TOKEN || secrets.GITHUB_TOKEN }}
+
+  cleanup-latest:
+    name: Cleanup latest-* versions
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Delete old latest-* versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ env.IMAGE_NAME }}
+          package-type: container
+          min-versions-to-keep: 2
+          ignore-versions: "^(?!latest).*$"
+          token: ${{ secrets.PACKAGE_CLEANUP_TOKEN || secrets.GITHUB_TOKEN }}
+
+  cleanup-testing:
+    name: Cleanup testing-* versions
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Delete old testing-* versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ env.IMAGE_NAME }}
+          package-type: container
+          min-versions-to-keep: 1
+          ignore-versions: "^(?!testing).*$"
+          token: ${{ secrets.PACKAGE_CLEANUP_TOKEN || secrets.GITHUB_TOKEN }}
+
+  cleanup-untagged:
+    name: Cleanup untagged manifests
+    # Deletes GHCR versions with no tag pointing to them anymore (e.g. old
+    # manifests left behind when tag-images moves a stream tag to a new
+    # build, or orphaned intermediate/multi-arch layers). Since nothing
+    # references them, they're pure storage waste, so all of them are
+    # removed instead of keeping N like the tagged-stream jobs above.
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Delete untagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ env.IMAGE_NAME }}
+          package-type: container
+          min-versions-to-keep: 0
+          delete-only-untagged-versions: true
+          token: ${{ secrets.PACKAGE_CLEANUP_TOKEN || secrets.GITHUB_TOKEN }}
+
+  cleanup-feature-branches:
+    name: Cleanup feat-* versions for deleted branches
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Delete feat-* versions whose branch no longer exists
+        env:
+          GH_TOKEN: ${{ secrets.PACKAGE_CLEANUP_TOKEN || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          IMAGE_NAME_LC="${IMAGE_NAME,,}"
+          ORG_LC="${REPO%%/*}"
+          ORG_LC="${ORG_LC,,}"
+
+          versions_json=$(gh api "/orgs/${ORG_LC}/packages/container/${IMAGE_NAME_LC}/versions?per_page=100")
+
+          echo "${versions_json}" | jq -c '.[]' | while read -r version; do
+            id=$(jq -r '.id' <<<"${version}")
+            tags=$(jq -r '.metadata.container.tags[]? // empty' <<<"${version}")
+
+            for tag in ${tags}; do
+              if [[ "${tag}" == feat-* ]]; then
+                branch="${tag#feat-}"
+                if ! gh api "/repos/${REPO}/branches/${branch}" >/dev/null 2>&1; then
+                  echo "Branch feat/${branch} no longer exists, deleting version ${id} (tag ${tag})"
+                  gh api -X DELETE "/orgs/${ORG_LC}/packages/container/${IMAGE_NAME_LC}/versions/${id}"
+                fi
+              fi
+            done
+          done

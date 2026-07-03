@@ -6,6 +6,8 @@
 
   "rebaseWhen": "never",
 
+  "baseBranches": ["main", "latest", "stable"],
+
   "packageRules": [
     {
       "automerge": true,
@@ -16,6 +18,15 @@
       "matchUpdateTypes": ["digest", "pinDigest", "pin"],
       "matchDepTypes": ["container"],
       "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
+    },
+    {
+      // Keep multi-stream branches current with upstream aurora-dx automatically.
+      "matchDepNames": ["ghcr.io/ublue-os/aurora-dx"],
+      "matchUpdateTypes": ["digest"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "schedule": ["every 6 hours"],
     },
   ]
 }

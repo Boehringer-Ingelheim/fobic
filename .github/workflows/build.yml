@@ -4,11 +4,13 @@ on:
   pull_request:
     branches:
       - main
-  schedule:
-    - cron: "05 10 * * *" # 10:05am UTC everyday
+      - latest
+      - stable
   push:
     branches:
       - main
+      - latest
+      - stable
       - feat/*
     paths-ignore:
       - "**/README.md"
@@ -18,7 +20,7 @@ env:
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -54,12 +56,36 @@ jobs:
 
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
 
-      - name: Default Tag
-        id: gen-default-tag
+      # The base image and published stream tag are derived from the branch name so the
+      # Containerfile itself can stay identical across main/latest/stable/feat branches.
+      - name: Resolve base image
+        id: resolve-base
         run: |
-          DEFAULT_TAG=$(just generate-default-tag)
+          BRANCH="${GITHUB_REF_NAME}"
+          case "${BRANCH}" in
+            stable) BASE_TAG="stable" ;;
+            latest) BASE_TAG="latest" ;;
+            main)   BASE_TAG="latest" ;;
+            feat/*) BASE_TAG="latest" ;;
+            *)      BASE_TAG="latest" ;;
+          esac
+          BASE_IMAGE="ghcr.io/ublue-os/aurora-dx:${BASE_TAG}"
 
-          echo "DEFAULT_TAG=${DEFAULT_TAG}" >> $GITHUB_ENV
+          echo "BASE_IMAGE=${BASE_IMAGE}" >> $GITHUB_ENV
+
+      - name: Resolve stream tag
+        id: resolve-stream
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          case "${BRANCH}" in
+            stable) STREAM_TAG="stable" ;;
+            latest) STREAM_TAG="latest" ;;
+            main)   STREAM_TAG="testing" ;;
+            feat/*) STREAM_TAG="feat-${BRANCH#feat/}" ;;
+            *)      STREAM_TAG="dev" ;;
+          esac
+
+          echo "STREAM_TAG=${STREAM_TAG}" >> $GITHUB_ENV
 
       - name: Prepare environment
         run: |
@@ -73,7 +99,8 @@ jobs:
         run: |
           sudo -E $(command -v just) build \
             ${IMAGE_NAME} \
-            ${DEFAULT_TAG}
+            ${STREAM_TAG} \
+            ${BASE_IMAGE}
 
       # This is optional, this provides smaller delta updates
       - name: Rechunk with rpm-ostree
@@ -81,7 +108,7 @@ jobs:
         run: |
           sudo -E $(command -v just) ostree-rechunk \
             ${IMAGE_NAME} \
-            ${DEFAULT_TAG}
+            ${STREAM_TAG}
 
       # If you are feeling adventurous, use the new distro agnostic rechunker
       # https://github.com/coreos/chunkah
@@ -91,14 +118,14 @@ jobs:
       #  run: |
       #    sudo -E $(command -v just) rechunk \
       #      ${IMAGE_NAME} \
-      #      ${DEFAULT_TAG}
+      #      ${STREAM_TAG}
 
       - name: Generate Build Tags
         id: gen-build-tags
         run: |
           alias_tags="$(just generate-build-tags \
                         ${IMAGE_NAME} \
-                        ${DEFAULT_TAG})"
+                        ${STREAM_TAG})"
 
           echo "Tags for this Action..."
           echo "${alias_tags}"
@@ -111,21 +138,21 @@ jobs:
         run: |
           sudo -E $(command -v just) tag-images \
             "${IMAGE_NAME}" \
-            "${DEFAULT_TAG}" \
+            "${STREAM_TAG}" \
             "${ALIAS_TAGS}"
 
-      # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
-      # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
+      # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing.
+      # The push trigger above is already scoped to main/latest/stable/feat/*, so any non-PR event here is a branch we intend to publish.
       - name: Login to GitHub Container Registry
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        if: github.event_name != 'pull_request'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push To GHCR
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        if: github.event_name != 'pull_request'
         id: push-image
         env:
           ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
@@ -145,14 +172,14 @@ jobs:
       # to consume. For more details, review the image signing section of the README.
       - name: Install Cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        if: github.event_name != 'pull_request'
         # https://github.com/containers/container-libs/issues/388
         with:
           cosign-release: "v2.6.3"
 
       - name: Sign container image
         id: sign-image
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        if: github.event_name != 'pull_request'
         env:
           COSIGN_EXPERIMENTAL: false
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
