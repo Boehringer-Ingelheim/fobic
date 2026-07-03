@@ -1,0 +1,3 @@
+docker:
+  ghcr.io/boehringer-ingelheim/fobic:
+    use-sigstore-attachments: true
