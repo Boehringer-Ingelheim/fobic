@@ -20,6 +20,12 @@
       "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
     },
     {
+      // Mirrors the weekly schedule previously configured for Dependabot's
+      // "github-actions" ecosystem in .github/dependabot.yml.
+      "matchManagers": ["github-actions"],
+      "extends": ["schedule:weekly"],
+    },
+    {
       // Keep multi-stream branches current with upstream aurora-dx automatically.
       "matchDepNames": ["ghcr.io/ublue-os/aurora-dx"],
       "matchUpdateTypes": ["digest"],
