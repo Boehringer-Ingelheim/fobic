@@ -1,0 +1,13 @@
+[Unit]
+Description=Run clean up commands that must run in a live system.
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/himmelblau-on-boot
+User=root
+
+[Install]
+WantedBy=sysinit.target
