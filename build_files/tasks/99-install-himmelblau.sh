@@ -39,10 +39,11 @@ aad-tool configure-pam
 # Enable Himmelblau services
 systemctl enable himmelblaud himmelblaud-tasks himmelblau-hsm-pin-init
 
+# Authselect profile setup to keep systemd-sysusers functional in the image build process
+authselect list
+authselect select himmelblau with-altfiles --force
+authselect apply-changes
+
 # Do any configuration that expects a live system
 systemctl enable himmelblau-on-boot.service
 
-# Switch out plasma-login for gdm
-dnf --setopt=tsflags=noscripts install -y gdm
-systemctl disable plasma-login.service
-systemctl enable gdm.service
