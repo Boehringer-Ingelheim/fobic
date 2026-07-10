@@ -43,6 +43,6 @@ systemctl enable himmelblaud himmelblaud-tasks himmelblau-hsm-pin-init
 systemctl enable himmelblau-on-boot.service
 
 # Switch out plasma-login for gdm
-dnf install -y gdm
+dnf --setopt=tsflags=noscripts install -y gdm
 systemctl disable plasma-login.service
 systemctl enable gdm.service
