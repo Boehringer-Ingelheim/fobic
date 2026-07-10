@@ -41,3 +41,8 @@ systemctl enable himmelblaud himmelblaud-tasks himmelblau-hsm-pin-init
 
 # Do any configuration that expects a live system
 systemctl enable himmelblau-on-boot.service
+
+# Switch out plasma-login for gdm
+dnf install -y gdm
+systemctl disable plasma-login.service
+systemctl enable gdm.service
