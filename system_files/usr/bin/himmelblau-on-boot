@@ -10,12 +10,3 @@ set -ouex pipefail
 authselect list
 authselect select himmelblau with-altfiles --force
 authselect apply-changes
-
-
-#
-# SELinux relabeling (usually run at rpm install time, but for the immutable image, we need to do it here)
-#
-restorecon -RFv /var /usr /etc /run
-
-systemctl daemon-reload >/dev/null 2>&1 || :
-systemctl try-restart himmelblaud.service himmelblaud-tasks.service >/dev/null 2>&1 || :
