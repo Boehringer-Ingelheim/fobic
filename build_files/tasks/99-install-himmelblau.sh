@@ -12,11 +12,14 @@ SELINUX_MAKEFILE="/usr/share/selinux/devel/Makefile"
 echo "Compiling SELinux policy modules..."
 cd "$SELINUX_SRC_DIR"
 make -f "$SELINUX_MAKEFILE" himmelblaud.pp
+# add custom modules until https://github.com/himmelblau-idm/himmelblau/pull/1531 is merged
+make -f "$SELINUX_MAKEFILE" himmelblaud_additional.pp
 echo "Installing SELinux policy modules..."
 semodule -i himmelblaud.pp
+semodule -i himmelblaud_additional.pp
 
 # Clean up compiled files (keep source for potential recompilation)
-rm -f himmelblaud.pp tmp/*.* 2>/dev/null || :
+rm -f himmelblaud.pp himmelblaud_additional.pp tmp/*.* 2>/dev/null || :
 rmdir tmp 2>/dev/null || :
 
 # Relabel installed binaries
