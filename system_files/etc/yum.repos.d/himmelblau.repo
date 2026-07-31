@@ -1,6 +1,6 @@
 [himmelblau]
-name=Himmelblau (fedora44, nightly 2026-07-23-00c7a84a7c6f)
-baseurl=https://packages.himmelblau-idm.org/nightly/2026-07-23-00c7a84a7c6f/rpm/fedora44/
+name=Himmelblau (fedora44, nightly 2026-07-31-74a3f0de26bc)
+baseurl=https://packages.himmelblau-idm.org/nightly/2026-07-31-74a3f0de26bc/rpm/fedora44/
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
