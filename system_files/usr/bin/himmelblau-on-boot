@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -ouex pipefail
+
+
+#
+# Authselect profile setup
+#
+
+authselect list
+authselect select himmelblau with-altfiles --force
+authselect apply-changes
