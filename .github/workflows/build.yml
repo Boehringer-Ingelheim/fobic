@@ -175,7 +175,7 @@ jobs:
         if: github.event_name != 'pull_request'
         # https://github.com/containers/container-libs/issues/388
         with:
-          cosign-release: "v2.6.3"
+          cosign-release: "v2.6.5"
 
       - name: Sign container image
         id: sign-image
