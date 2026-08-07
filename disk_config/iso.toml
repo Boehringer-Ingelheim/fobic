@@ -6,7 +6,7 @@ rootpw --lock
 #user --name=fobic --lock
 
 %post
-bootc switch --mutate-in-place --transport registry ghcr.io/Boehringer-Ingelheim/fobic:latest
+bootc switch --mutate-in-place --transport registry ghcr.io/boehringer-ingelheim/fobic:latest
 %end
 """
 

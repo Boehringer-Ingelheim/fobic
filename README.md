@@ -1,8 +1,8 @@
 # FOBIC (Free OBIC)
 
-[![FOBIC Build](https://github.com/Boehringer-Ingelheim/fobic/actions/workflows/build.yml/badge.svg)](https://github.com/Boehringer-Ingelheim/fobic/actions/workflows/build.yml)
+[![FOBIC Build](https://github.com/boehringer-ingelheim/fobic/actions/workflows/build.yml/badge.svg)](https://github.com/boehringer-ingelheim/fobic/actions/workflows/build.yml)
 
-FOBIC is a custom [bootc](https://github.com/bootc-dev/bootc) image built on top of [`ghcr.io/ublue-os/aurora-dx`](https://github.com/ublue-os/aurora-dx), customized and published for Boehringer-Ingelheim. It's built with the [Universal Blue](https://universal-blue.org/) image tooling (Containerfile + Just + GitHub Actions).
+FOBIC is a custom [bootc](https://github.com/bootc-dev/bootc) image built on top of [`ghcr.io/ublue-os/aurora-dx`](https://github.com/ublue-os/aurora-dx), customized and published for boehringer-ingelheim. It's built with the [Universal Blue](https://universal-blue.org/) image tooling (Containerfile + Just + GitHub Actions).
 
 ## Image Streams
 
