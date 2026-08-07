@@ -1,34 +1,50 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices",
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [
+    'config:best-practices',
   ],
-
-  "rebaseWhen": "never",
-
-  "baseBranches": ["main", "latest", "stable"],
-
-  "packageRules": [
+  rebaseWhen: 'never',
+  baseBranchPatterns: [
+    'main',
+    'latest',
+    'stable',
+  ],
+  packageRules: [
     {
-      "automerge": true,
-      "matchUpdateTypes": ["pin", "pinDigest"]
-    },
-    {
-      "enabled": false,
-      "matchUpdateTypes": ["digest", "pinDigest", "pin"],
-      "matchDepTypes": ["container"],
-      "matchFileNames": [".github/workflows/**.yaml", ".github/workflows/**.yml"],
-    },
-    {
-      // Keep multi-stream branches current with upstream aurora-dx automatically.
-      "matchDepNames": ["ghcr.io/ublue-os/aurora-dx"],
-      "matchUpdateTypes": ["digest"],
-      "automerge": true,
-      "automergeType": "pr",
-      "platformAutomerge": true,
-      "schedule": [
-        "* 0,6,12,18 * * *"
+      automerge: true,
+      matchUpdateTypes: [
+        'pin',
+        'pinDigest',
       ],
     },
-  ]
+    {
+      enabled: false,
+      matchUpdateTypes: [
+        'digest',
+        'pinDigest',
+        'pin',
+      ],
+      matchDepTypes: [
+        'container',
+      ],
+      matchFileNames: [
+        '.github/workflows/**.yaml',
+        '.github/workflows/**.yml',
+      ],
+    },
+    {
+      matchDepNames: [
+        'ghcr.io/ublue-os/aurora-dx',
+      ],
+      matchUpdateTypes: [
+        'digest',
+      ],
+      automerge: true,
+      automergeType: 'pr',
+      platformAutomerge: true,
+      schedule: [
+        '* 0,6,12,18 * * *',
+      ],
+    },
+  ],
 }
