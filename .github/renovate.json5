@@ -4,10 +4,12 @@
     'config:best-practices',
   ],
   rebaseWhen: 'never',
+  dependencyDashboard: true,
+  labels: [
+    'dependencies',
+  ],
   baseBranchPatterns: [
     'main',
-    'latest',
-    'stable',
   ],
   packageRules: [
     {
