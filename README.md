@@ -89,6 +89,8 @@ Configuration such as the image name, description, and registry organization liv
 
 [`.github/workflows/build-disk.yml`](.github/workflows/build-disk.yml) builds installable disk images from the published `fobic:latest` container using [bootc-image-builder](https://osbuild.org/docs/bootc/), configured via [`disk_config/disk.toml`](disk_config/disk.toml) and [`disk_config/iso.toml`](disk_config/iso.toml). It can optionally upload results to S3 (`upload-to-s3` input) or attach them as a workflow artifact. Trigger it manually from the Actions tab (`workflow_dispatch`).
 
+See [Building and testing an installer ISO locally](docs/local-installer-testing.md) for the complete GitHub Actions, download, and Fedora/QEMU workflow.
+
 ## Repository Layout
 
 | Path | Purpose |
