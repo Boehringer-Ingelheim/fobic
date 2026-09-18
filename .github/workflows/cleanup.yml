@@ -24,7 +24,7 @@ permissions:
 jobs:
   cleanup-stable:
     name: Cleanup stable-* versions
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       # This action is not yet pinned to a commit SHA; Renovate will open an
       # automerging "pin" PR to convert this to a digest, matching this repo's
@@ -40,7 +40,7 @@ jobs:
 
   cleanup-latest:
     name: Cleanup latest-* versions
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Delete old latest-* versions
         uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
@@ -58,7 +58,7 @@ jobs:
     # build, or orphaned intermediate/multi-arch layers). Since nothing
     # references them, they're pure storage waste, so all of them are
     # removed instead of keeping N like the tagged-stream jobs above.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Delete untagged versions
         uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
@@ -71,7 +71,7 @@ jobs:
 
   cleanup-feature-branches:
     name: Cleanup feat-* versions for deleted branches
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Delete feat-* versions whose branch no longer exists
         env:
