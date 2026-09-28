@@ -57,6 +57,7 @@ Because the workflow file and Containerfile are identical across branches, promo
 ## What's Customized
 
 - [`build_files/build.sh`](build_files/build.sh) copies [`system_files/`](system_files) into the image, then runs every numbered script under [`build_files/tasks/`](build_files/tasks) in order (currently: installing Microsoft Edge and OneDrive).
+- Himmelblau's first-login task assigns ownership of `/home/linuxbrew` to the authenticated user's runtime UID/GID, avoiding assumptions about the UID allocated to Entra ID users.
 - [`system_files/usr/share/ublue-os/just/`](system_files/usr/share/ublue-os/just) adds extra `just` commands available on the built system: `aws-smp`, `onedrive`, `openshift-client`, and `ssh-key-agent` (see [`60-custom.just`](system_files/usr/share/ublue-os/just/60-custom.just) for the full list).
 
 ## Local Development

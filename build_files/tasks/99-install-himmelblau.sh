@@ -5,6 +5,10 @@ set -ouex pipefail
 # install himmelblau packages
 dnf install -y himmelblau pam-himmelblau nss-himmelblau himmelblau-sso himmelblau-selinux
 
+# The logon script is invoked by himmelblaud-tasks as root, after USERNAME has
+# been resolved by Himmelblau, so it can safely handle dynamically assigned UIDs.
+chmod 0755 /usr/bin/himmelblau-brew-ownership
+
 # Configuring PAM for Himmelblau
 aad-tool configure-pam
 

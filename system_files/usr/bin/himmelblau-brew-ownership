@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set -euo pipefail
+
+brew_root=/home/linuxbrew
+
+if [[ -z "${USERNAME:-}" || ! -d "$brew_root" ]]; then
+    exit 0
+fi
+
+uid=$(id -u -- "$USERNAME")
+gid=$(id -g -- "$USERNAME")
+
+# Avoid changing ownership again on subsequent logins once the tree is fixed.
+if [[ "$(stat -c '%u:%g' "$brew_root")" == "$uid:$gid" ]]; then
+    exit 0
+fi
+
+chown -R "$uid:$gid" "$brew_root"
