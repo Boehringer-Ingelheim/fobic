@@ -152,10 +152,31 @@ jobs:
         id: push-image
         env:
           ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euox pipefail
+          set +x
+          printf '%s' "${GITHUB_TOKEN}" | sudo podman login \
+            --username "${GITHUB_ACTOR}" \
+            --password-stdin \
+            ghcr.io
+          unset GITHUB_TOKEN
+          set -x
+
           for tag in ${ALIAS_TAGS}; do
-            sudo -E podman push --digestfile=/tmp/digestfile ${IMAGE_NAME}:${tag} ${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}
+            for attempt in 1 2 3; do
+              if sudo podman push --digestfile=/tmp/digestfile \
+                ${IMAGE_NAME}:${tag} \
+                ${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}; then
+                break
+              fi
+
+              if [ "${attempt}" -eq 3 ]; then
+                exit 1
+              fi
+
+              sleep $((attempt * 10))
+            done
           done
 
           digest=$(< /tmp/digestfile)
