@@ -202,4 +202,9 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
           DIGEST: ${{ steps.push-image.outputs.digest }}
         run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
+          cosign sign \
+            -y \
+            --new-bundle-format=false \
+            --use-signing-config=false \
+            --key env://COSIGN_PRIVATE_KEY \
+            "${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}"
