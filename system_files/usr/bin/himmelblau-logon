@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -euo pipefail
+
+shopt -s nullglob
+
+for script in /usr/libexec/himmelblau/logon.d/*; do
+    [[ -f "$script" && -x "$script" ]] || continue
+    "$script"
+done
