@@ -1,0 +1,6 @@
+[prisma-access-browser]
+name=Palo Alto Prisma Access Browser
+baseurl=https://updates.talon-sec.com/linux/prisma-access-browser/rpm/stable/x86_64
+enabled=1
+gpgcheck=1
+gpgkey=https://updates.talon-sec.com/linux/prisma-access-browser/linux_signing_key.pub
