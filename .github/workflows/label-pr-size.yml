@@ -1,0 +1,17 @@
+name: Label PRs based on size
+
+on: [pull_request]
+
+jobs:
+  add_pr_size_label:
+    runs-on: [docker]
+    name: Check PR size
+    container:
+      image: ubuntu:22.04
+
+    steps:
+      - name: Label and comment PR
+        uses: boschresearch/pr-size-labeler@6a93d42dd5199ee28d5f41edc359aa5218b4fa7e # v5
+        # Uncomment these lines if you want to use your own custom configuration
+        # with:
+        #   bucketConfigFile: "<PATH_TO_YOUR_BUCKET_CONFIG>"

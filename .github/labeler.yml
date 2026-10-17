@@ -1,0 +1,31 @@
+"ci/cd":
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"
+
+
+"documentation":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "**/*.md"
+
+"container-image":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Containerfile"
+          - "Justfile"
+          - "image-template.env"
+          - any-glob-to-any-file: "build_files/**"
+          - any-glob-to-any-file: "system_files/**"
+
+"disk-images":
+  - changed-files:
+      - any-glob-to-any-file: "disk_config/**"
+
+"security":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "SECURITY.md"
+          - "cosign.pub"
+          - "build_files/tasks/00-configure-image-signing.sh"
+          - "system_files/usr/lib/pki/containers/**"
