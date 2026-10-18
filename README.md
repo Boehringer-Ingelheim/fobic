@@ -6,15 +6,15 @@ FOBIC is a custom [bootc](https://github.com/bootc-dev/bootc) image built on top
 
 ## Image Streams
 
-The image is published from a single Containerfile across three branch types. The base image and the published tag are resolved automatically by CI based on the branch name — the Containerfile itself is identical across branches.
+The image is published from a single Containerfile across four branch types. The base image and the published tag are resolved automatically by CI based on the branch name — the Containerfile itself is identical across branches.
 
 | Branch   | Base image                            | Published tag | Retention        | Purpose                           |
 |----------|----------------------------------------|---------------|-------------------|------------------------------------|
 | `main`   | `ghcr.io/ublue-os/aurora-dx:latest`   | `latest`     | 2 images          | Integration testing               |
 | `stable` | `ghcr.io/ublue-os/aurora-dx:stable`   | `stable`      | 2 images          | Conservative production (~weeks)  |
-| `feat/*` | `ghcr.io/ublue-os/aurora-dx:latest`   | `feat-{name}` | 1 image           | Feature testing           |
+| `feat/*`, `fix/*` | `ghcr.io/ublue-os/aurora-dx:latest` | `feat-{name}`, `fix-{name}` | 1 image | Feature/fix testing |
 
-Each build also gets dated/SHA tags (e.g. `stable-20260703-a1b2c3d`) for pinning/rollback. Old versions are pruned nightly by [`.github/workflows/cleanup.yml`](.github/workflows/cleanup.yml) according to the retention column above, plus removal of untagged manifests and `feat-*` tags whose branch no longer exists.
+Each build also gets dated/SHA tags (e.g. `stable-20260703-a1b2c3d`) for pinning/rollback. Old versions are pruned nightly by [`.github/workflows/cleanup.yml`](.github/workflows/cleanup.yml) according to the retention column above, plus removal of untagged manifests and `feat-*`/`fix-*` tags whose branch no longer exists.
 
 ## Installing / Switching to FOBIC
 
@@ -48,7 +48,7 @@ Changes flow forward through the streams via normal merges:
 feat/my-feature (testing) → main (latest) → stable
 ```
 
-1. Work happens on a `feat/*` branch; pushing it publishes a `feat-{name}` testing image.
+1. Work happens on a `feat/*` or `fix/*` branch; pushing it publishes a corresponding `feat-{name}` or `fix-{name}` testing image.
 2. PR into `main` — CI builds but does not publish. Once merged, `main` publishes `fobic:latest`.
 3. Promote `main → stable` (merge/PR, 2 reviewers recommended) once `latest` has proven stable — publishes `fobic:stable`.
 
