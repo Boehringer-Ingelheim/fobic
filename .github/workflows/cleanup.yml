@@ -84,19 +84,38 @@ jobs:
           ORG_LC="${REPO%%/*}"
           ORG_LC="${ORG_LC,,}"
 
-          versions_json=$(gh api "/orgs/${ORG_LC}/packages/container/${IMAGE_NAME_LC}/versions?per_page=100")
+          # A feature branch has one canonical tag (feat-{branch}) plus dated
+          # and SHA aliases. Only canonical tags can be used to determine
+          # whether a branch still exists.
+          declare -A active_feature_tags=()
+          while IFS= read -r branch; do
+            active_feature_tags["feat-${branch#feat/}"]=1
+          done < <(
+            gh api --paginate "/repos/${REPO}/branches?per_page=100" \
+              --jq '.[] | .name' |
+              while IFS= read -r branch; do
+                [[ "${branch}" == feat/* ]] && printf '%s\n' "${branch}"
+              done
+          )
 
-          echo "${versions_json}" | jq -c '.[]' | while read -r version; do
+          gh api --paginate --slurp \
+            "/orgs/${ORG_LC}/packages/container/${IMAGE_NAME_LC}/versions?per_page=100" |
+          jq -c '.[][]' | while read -r version; do
             id=$(jq -r '.id' <<<"${version}")
-            tags=$(jq -r '.metadata.container.tags[]? // empty' <<<"${version}")
+            has_feature_tag=false
+            has_active_feature_tag=false
 
-            for tag in ${tags}; do
-              if [[ "${tag}" == feat-* ]]; then
-                branch="${tag#feat-}"
-                if ! gh api "/repos/${REPO}/branches/${branch}" >/dev/null 2>&1; then
-                  echo "Branch feat/${branch} no longer exists, deleting version ${id} (tag ${tag})"
-                  gh api -X DELETE "/orgs/${ORG_LC}/packages/container/${IMAGE_NAME_LC}/versions/${id}"
-                fi
+            while IFS= read -r tag; do
+              [[ "${tag}" == feat-* ]] || continue
+              has_feature_tag=true
+              if [[ -n "${active_feature_tags[${tag}]+x}" ]]; then
+                has_active_feature_tag=true
               fi
-            done
+            done < <(jq -r '.metadata.container.tags[]? // empty' <<<"${version}")
+
+            if [[ "${has_feature_tag}" == true && "${has_active_feature_tag}" == false ]]; then
+              echo "No matching feature branch exists, deleting version ${id}"
+              gh api -X DELETE \
+                "/orgs/${ORG_LC}/packages/container/${IMAGE_NAME_LC}/versions/${id}"
+            fi
           done
