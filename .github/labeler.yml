@@ -15,8 +15,8 @@
           - "Containerfile"
           - "Justfile"
           - "image-template.env"
-          - any-glob-to-any-file: "build_files/**"
-          - any-glob-to-any-file: "system_files/**"
+          - "build_files/**"
+          - "system_files/**"
 
 "disk-images":
   - changed-files:
