@@ -3,6 +3,8 @@
 set -ouex pipefail
 
 # Install GlobalProtect network manager client
+
+# Test package from PR (https://github.com/WMP/GlobalProtect-SAML-NetworkManager/pull/42)
 TEMP_FOLDER=$(mktemp -d)
 
 curl -L -o "$TEMP_FOLDER/rpms-fedora44-amd64.zip" https://github.com/WMP/GlobalProtect-SAML-NetworkManager/actions/runs/39407656492/artifacts/12257724753
