@@ -1,0 +1,84 @@
+name: Bug report
+description: Report a reproducible problem or regression
+title: ""
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this bug. Please fill out the details below so we can reproduce and fix it.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A brief description of the issue.
+      placeholder: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide the exact steps needed to reproduce the issue.
+      placeholder: |
+        1. Go to...
+        2. Click on...
+        3. See error...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened instead?
+      placeholder: Describe the observed behavior, including any error messages.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include relevant system, app, or deployment details.
+      placeholder: |
+        - Image Version (e.g., latest, 1.0.0, commit):
+        - Relevant configuration:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Add any relevant logs, screenshots, tracebacks, or output.
+      placeholder: Paste logs or attach screenshots.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include any other information that might help diagnose the issue.
+      placeholder: Add related links, references, or notes.
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I searched for an existing issue and this is not a duplicate
+          required: true
+        - label: I can reproduce this issue reliably
+          required: true
