@@ -2,3 +2,4 @@
 set -ouex pipefail
 
 update-ca-trust
+
