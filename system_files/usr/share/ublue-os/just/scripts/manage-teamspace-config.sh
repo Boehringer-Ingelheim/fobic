@@ -26,7 +26,7 @@ check_dependencies
 
 backup() {
   local file="$1"
-  cp "$file" "${file}.bak.$(date +%Y%m%d%H%M%S)"
+  cp "$file" "${file}.bak"
 }
 
 # Extract content between managed markers to stdout
