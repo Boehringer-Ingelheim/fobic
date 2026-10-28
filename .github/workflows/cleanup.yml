@@ -18,13 +18,16 @@ env:
   IMAGE_NAME: fobic
 
 permissions:
-  packages: write
   contents: read
+  packages: read
 
 jobs:
   cleanup-stable:
     name: Cleanup stable-* versions
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       # This action is not yet pinned to a commit SHA; Renovate will open an
       # automerging "pin" PR to convert this to a digest, matching this repo's
@@ -41,6 +44,9 @@ jobs:
   cleanup-latest:
     name: Cleanup latest-* versions
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Delete old latest-* versions
         uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
@@ -59,6 +65,9 @@ jobs:
     # references them, they're pure storage waste, so all of them are
     # removed instead of keeping N like the tagged-stream jobs above.
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Delete untagged versions
         uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
@@ -72,6 +81,9 @@ jobs:
   cleanup-ephemeral-branches:
     name: Cleanup feat-* and fix-* versions for deleted branches
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Delete feat-* and fix-* versions whose branch no longer exists
         env:
