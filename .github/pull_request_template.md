@@ -10,7 +10,7 @@ Fixes #
 
 ## System Integration Impact
 
-<!-- If this change affects systemd, PAM/NSS/authselect, SELinux/AppArmor, filesystem paths, or credentials, describe the impact. Write "N/A" if not applicable. -->
+<!-- If this change affects systemd, PAM/NSS/authselect, SELinux, filesystem paths, or credentials, describe the impact. Write "N/A" if not applicable. -->
 
 ## Checklist
 
