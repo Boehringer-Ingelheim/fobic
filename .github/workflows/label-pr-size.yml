@@ -3,6 +3,9 @@ name: PR size
 on:
   pull_request_target:
 
+permissions:
+  contents: read
+
 jobs:
   size:
     runs-on: ubuntu-latest

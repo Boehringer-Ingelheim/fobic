@@ -8,6 +8,9 @@ on:
       - edited
       # - synchronize (if you use required Actions)
 
+permissions:
+  pull-requests: read
+
 jobs:
   main:
     name: Validate PR title
