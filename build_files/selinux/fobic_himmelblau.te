@@ -1,0 +1,15 @@
+policy_module(fobic_himmelblau, 1.0)
+
+# Himmelblau >= 4.0.7 uses systemd socket activation (himmelblaud*.socket).
+# systemd creates the listening sockets labeled with the service domain
+# (himmelblaud_t), but upstream's policy relies on init_nnp_daemon_domain(),
+# which on Fedora does not add himmelblaud_t to the "daemon" attribute.
+# Without this, init_t is denied create/setopt on the sockets, the socket units
+# fail and himmelblaud never starts, breaking Entra ID logins.
+
+require {
+	type init_t;
+	type himmelblaud_t;
+}
+
+allow init_t himmelblaud_t:unix_stream_socket create_stream_socket_perms;
