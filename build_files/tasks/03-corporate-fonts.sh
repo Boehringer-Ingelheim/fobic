@@ -3,7 +3,7 @@
 set -ouex pipefail
 
 # install dependencies
-dnf5 install woff2 wget -y
+dnf5 install woff2-tools wget -y
 
 # define variables
 tmpdir=$(mktemp -d)
