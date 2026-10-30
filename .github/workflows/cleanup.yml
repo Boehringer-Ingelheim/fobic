@@ -4,7 +4,7 @@ name: Cleanup container images
 # Prunes old GHCR versions per stream so the package doesn't grow unbounded.
 #
 # Requires either:
-#   - the GHCR package "fobic" has "Manage Actions access" set to grant this
+#   - the GHCR package "dino" has "Manage Actions access" set to grant this
 #     repo the Admin role (lets the default GITHUB_TOKEN delete versions), or
 #   - a repo secret PACKAGE_CLEANUP_TOKEN: a classic PAT with the
 #     read:packages + delete:packages scopes, used as a fallback below.
@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: fobic
+  IMAGE_NAME: dino
 
 permissions:
   contents: read
