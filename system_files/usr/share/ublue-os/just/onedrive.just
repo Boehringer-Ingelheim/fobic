@@ -1,10 +1,5 @@
-# # OneDrive helpers (call scripts installed to /usr/share/ublue-os/just/scripts)
+# OneDrive: enable service (if needed), stop it, authenticate, then start it
 [group('BI helpers')]
-onedrive-auth:
+onedrive:
     #!/usr/bin/bash
-    /usr/share/ublue-os/just/scripts/onedrive.sh auth
-
-[group('BI helpers')]
-onedrive-service:
-    #!/usr/bin/bash
-    /usr/share/ublue-os/just/scripts/onedrive.sh service
+    /usr/share/ublue-os/just/scripts/onedrive.sh

@@ -38,7 +38,7 @@ Reboot to complete the switch. All published images are signed with [cosign](htt
 ## How the Build Works
 
 - [`Containerfile`](Containerfile) declares `ARG BASE_IMAGE=ghcr.io/ublue-os/aurora-dx:stable` before the first `FROM`, then does `FROM ${BASE_IMAGE}`. Locally, this default is used when the arg isn't overridden.
-- [`.github/workflows/build.yml`](.github/workflows/build.yml) resolves `BASE_IMAGE` and `STREAM_TAG` from the branch name (`resolve-base` / `resolve-stream` steps) and passes them into `just build`, so the same workflow file drives every stream.
+- [`.github/workflows/build.yml`](.github/workflows/build.yml) resolves `BASE_IMAGE` and `STREAM_TAG` from the branch name (`resolve-base` / `resolve-stream` steps), builds the image with `just build`, and rechunks it into deterministic OCI layers with [Chunkah](https://github.com/coreos/chunkah) (`just rechunk`) for smaller delta updates (see [`docs/rechunking.md`](docs/rechunking.md)).
 - [`.github/renovate.json5`](.github/renovate.json5) tracks `main`, `latest`, and `stable` as base branches and auto-merges `aurora-dx` digest bumps every 6 hours, keeping all streams current with upstream without a nightly rebuild cron.
 - Publishing (push/tag/sign) only happens on `push` events (not on pull requests), so PRs build and validate but never publish.
 
@@ -63,6 +63,7 @@ Because the workflow file and Containerfile are identical across branches, promo
 | Image build tasks | [`build.sh`](build_files/build.sh), [`tasks/`](build_files/tasks) | Copies [`system_files/`](system_files) into the image, then runs numbered task scripts in order. |
 | Image signature trust | [`00-configure-image-signing.sh`](build_files/tasks/00-configure-image-signing.sh), [`container public keys`](system_files/usr/lib/pki/containers) | Adds FOBIC's signing keys to the container policy so signed FOBIC images can be verified. |
 | Browsers and cloud storage | [`01-install-edge-onedrive.sh`](build_files/tasks/01-install-edge-onedrive.sh), [`02-install-paloalto-browser.sh`](build_files/tasks/02-install-paloalto-browser.sh), [`Prisma Browser RPM repo`](system_files/etc/yum.repos.d/prisma-access-browser.repo) | Installs Microsoft Edge as the default browser, Palo Alto Prisma Access Browser as an alternative, and OneDrive. |
+| Developer tools | [`03-install-developer-tools.sh`](build_files/tasks/03-install-developer-tools.sh) | Installs AWS CLI v2, the AWS Session Manager Plugin, and OpenShift's `oc` client; installs `kubectl` if it isn't already available. |
 | Display manager | [`98-switch-plasmalogin-for-gdm.sh`](build_files/tasks/98-switch-plasmalogin-for-gdm.sh) | Replaces Plasma Login with GDM. |
 | Entra ID sign-in | [`99-install-himmelblau.sh`](build_files/tasks/99-install-himmelblau.sh), [`himmelblau-brew-ownership`](system_files/usr/libexec/himmelblau/logon.d/himmelblau-brew-ownership) | Installs and configures Himmelblau; on first login, assigns `/home/linuxbrew` to the authenticated user's runtime UID/GID. |
 | Extra `just` commands | [`60-custom.just`](system_files/usr/share/ublue-os/just/60-custom.just) | Imports optional recipes for `aws-smp`, `onedrive`, `openshift-client`, and `ssh-key-agent`. |
@@ -85,6 +86,7 @@ just build fobic latest ghcr.io/ublue-os/aurora-dx:latest
 Other useful commands:
 
 ```bash
+just rechunk          # Rechunk a built image into component layers with Chunkah
 just build-qcow2      # Build a bootable QCOW2 VM image
 just build-iso        # Build a bootable ISO
 just check            # Validate Justfile/*.just syntax
@@ -113,6 +115,8 @@ See [Building and testing an installer ISO locally](docs/local-installer-testing
 | [`.github/workflows/cleanup.yml`](.github/workflows/cleanup.yml) | Prunes old GHCR versions per stream retention policy |
 | [`.github/renovate.json5`](.github/renovate.json5) | Automerges base-image digest bumps across streams |
 | [`cosign.pub`](cosign.pub) | Public key to verify image signatures |
+| [`docs/rechunking.md`](docs/rechunking.md) | How OCI layer rechunking with Chunkah works and how FOBIC prepares layers during build |
+| [`docs/local-installer-testing.md`](docs/local-installer-testing.md) | How to build and test an installer ISO locally in QEMU/KVM with TPM 2.0 |
 | [`docs/image-signing.md`](docs/image-signing.md) | How bootc/rpm-ostree signature verification works, FOBIC's setup, and key-compromise incident response |
 
 ## Community / Upstream
