@@ -34,7 +34,7 @@ The expected result is `0  0`. Trigger the amd64 disk-image workflow:
 
 ```bash
 gh workflow run build-disk.yml \
-  --repo Boehringer-Ingelheim/fobic \
+  --repo Boehringer-Ingelheim/dino \
   --ref main \
   -f platform=amd64 \
   -f upload-to-s3=false
@@ -45,7 +45,7 @@ Find the newly dispatched run and wait for it:
 ```bash
 RUN_ID="$(
   gh run list \
-    --repo Boehringer-Ingelheim/fobic \
+    --repo Boehringer-Ingelheim/dino \
     --workflow build-disk.yml \
     --event workflow_dispatch \
     --limit 1 \
@@ -54,7 +54,7 @@ RUN_ID="$(
 )"
 
 gh run watch "$RUN_ID" \
-  --repo Boehringer-Ingelheim/fobic \
+  --repo Boehringer-Ingelheim/dino \
   --exit-status \
   --interval 30
 ```
@@ -70,7 +70,7 @@ After the first run finishes, find the Anaconda ISO job ID:
 ```bash
 ISO_JOB_ID="$(
   gh run view "$RUN_ID" \
-    --repo Boehringer-Ingelheim/fobic \
+    --repo Boehringer-Ingelheim/dino \
     --json jobs \
     --jq '.jobs[] | select(.name | contains("anaconda-iso")) | .databaseId'
 )"
@@ -80,11 +80,11 @@ Rerun only that job so the surviving artifact is the ISO:
 
 ```bash
 gh run rerun "$RUN_ID" \
-  --repo Boehringer-Ingelheim/fobic \
+  --repo Boehringer-Ingelheim/dino \
   --job "$ISO_JOB_ID"
 
 gh run watch "$RUN_ID" \
-  --repo Boehringer-Ingelheim/fobic \
+  --repo Boehringer-Ingelheim/dino \
   --exit-status \
   --interval 30
 ```
@@ -95,7 +95,7 @@ gh run watch "$RUN_ID" \
 mkdir -p output/main-iso
 
 gh run download "$RUN_ID" \
-  --repo Boehringer-Ingelheim/fobic \
+  --repo Boehringer-Ingelheim/dino \
   --name artifact \
   --dir output/main-iso
 
@@ -113,28 +113,28 @@ Create a 64 GiB sparse QCOW2 disk, a writable copy of the UEFI variable store,
 and persistent TPM state:
 
 ```bash
-mkdir -p "$HOME/vm-disks/fobic-test"
-mkdir -p "$HOME/vm-disks/fobic-test/tpm"
+mkdir -p "$HOME/vm-disks/dino-test"
+mkdir -p "$HOME/vm-disks/dino-test/tpm"
 
 qemu-img create \
   -f qcow2 \
-  "$HOME/vm-disks/fobic-test/system.qcow2" \
+  "$HOME/vm-disks/dino-test/system.qcow2" \
   64G
 
 cp /usr/share/edk2/ovmf/OVMF_VARS.fd \
-  "$HOME/vm-disks/fobic-test/OVMF_VARS.fd"
+  "$HOME/vm-disks/dino-test/OVMF_VARS.fd"
 ```
 
-FOBIC configures Himmelblau with `hsm_type = tpm`, so the VM must have a TPM
+DINO configures Himmelblau with `hsm_type = tpm`, so the VM must have a TPM
 2.0 device. Start the software TPM before each QEMU launch:
 
 ```bash
-rm -f "$HOME/vm-disks/fobic-test/tpm/swtpm.sock"
+rm -f "$HOME/vm-disks/dino-test/tpm/swtpm.sock"
 
 swtpm socket \
   --tpm2 \
-  --tpmstate dir="$HOME/vm-disks/fobic-test/tpm" \
-  --ctrl type=unixio,path="$HOME/vm-disks/fobic-test/tpm/swtpm.sock" \
+  --tpmstate dir="$HOME/vm-disks/dino-test/tpm" \
+  --ctrl type=unixio,path="$HOME/vm-disks/dino-test/tpm/swtpm.sock" \
   --terminate \
   --daemon
 ```
@@ -145,16 +145,16 @@ Run this from the same shell in which `ISO` was set:
 
 ```bash
 qemu-system-x86_64 \
-  -name fobic-installer \
+  -name dino-installer \
   -machine q35,accel=kvm \
   -cpu host \
   -smp 8 \
   -m 8192 \
   -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/ovmf/OVMF_CODE.fd \
-  -drive if=pflash,format=raw,file="$HOME/vm-disks/fobic-test/OVMF_VARS.fd" \
-  -drive file="$HOME/vm-disks/fobic-test/system.qcow2",if=virtio,format=qcow2,cache=none,discard=unmap \
+  -drive if=pflash,format=raw,file="$HOME/vm-disks/dino-test/OVMF_VARS.fd" \
+  -drive file="$HOME/vm-disks/dino-test/system.qcow2",if=virtio,format=qcow2,cache=none,discard=unmap \
   -drive file="$ISO",media=cdrom,readonly=on \
-  -chardev socket,id=chrtpm,path="$HOME/vm-disks/fobic-test/tpm/swtpm.sock" \
+  -chardev socket,id=chrtpm,path="$HOME/vm-disks/dino-test/tpm/swtpm.sock" \
   -tpmdev emulator,id=tpm0,chardev=chrtpm \
   -device tpm-crb,tpmdev=tpm0 \
   -boot once=d,menu=on \
@@ -175,12 +175,12 @@ If the VM returns to the installer, close it and restart without attaching the
 ISO. Start `swtpm` again first because `--terminate` stops it when QEMU exits:
 
 ```bash
-rm -f "$HOME/vm-disks/fobic-test/tpm/swtpm.sock"
+rm -f "$HOME/vm-disks/dino-test/tpm/swtpm.sock"
 
 swtpm socket \
   --tpm2 \
-  --tpmstate dir="$HOME/vm-disks/fobic-test/tpm" \
-  --ctrl type=unixio,path="$HOME/vm-disks/fobic-test/tpm/swtpm.sock" \
+  --tpmstate dir="$HOME/vm-disks/dino-test/tpm" \
+  --ctrl type=unixio,path="$HOME/vm-disks/dino-test/tpm/swtpm.sock" \
   --terminate \
   --daemon
 ```
@@ -189,15 +189,15 @@ Then boot the installed disk:
 
 ```bash
 qemu-system-x86_64 \
-  -name fobic-installed \
+  -name dino-installed \
   -machine q35,accel=kvm \
   -cpu host \
   -smp 8 \
   -m 8192 \
   -drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/ovmf/OVMF_CODE.fd \
-  -drive if=pflash,format=raw,file="$HOME/vm-disks/fobic-test/OVMF_VARS.fd" \
-  -drive file="$HOME/vm-disks/fobic-test/system.qcow2",if=virtio,format=qcow2,cache=none,discard=unmap \
-  -chardev socket,id=chrtpm,path="$HOME/vm-disks/fobic-test/tpm/swtpm.sock" \
+  -drive if=pflash,format=raw,file="$HOME/vm-disks/dino-test/OVMF_VARS.fd" \
+  -drive file="$HOME/vm-disks/dino-test/system.qcow2",if=virtio,format=qcow2,cache=none,discard=unmap \
+  -chardev socket,id=chrtpm,path="$HOME/vm-disks/dino-test/tpm/swtpm.sock" \
   -tpmdev emulator,id=tpm0,chardev=chrtpm \
   -device tpm-crb,tpmdev=tpm0 \
   -device virtio-vga \
@@ -227,8 +227,8 @@ ls -l /dev/tpm*
 To repeat the installation from a blank disk:
 
 ```bash
-rm "$HOME/vm-disks/fobic-test/system.qcow2"
-rm -rf "$HOME/vm-disks/fobic-test/tpm"
-mkdir -p "$HOME/vm-disks/fobic-test/tpm"
-qemu-img create -f qcow2 "$HOME/vm-disks/fobic-test/system.qcow2" 64G
+rm "$HOME/vm-disks/dino-test/system.qcow2"
+rm -rf "$HOME/vm-disks/dino-test/tpm"
+mkdir -p "$HOME/vm-disks/dino-test/tpm"
+qemu-img create -f qcow2 "$HOME/vm-disks/dino-test/system.qcow2" 64G
 ```

@@ -1,7 +1,7 @@
 # Image Signing & Verification
 
 This document describes how container image signature verification works on
-bootc/rpm-ostree systems in general, exactly how FOBIC is set up, and the
+bootc/rpm-ostree systems in general, exactly how DINO is set up, and the
 incident response process for a leaked signing key.
 
 ## 1. How bootc and rpm-ostree handle signatures
@@ -82,17 +82,17 @@ Does **not** guarantee:
   firmware/bootloader/kernel layer (verifying the boot chain before Linux
   userspace starts). `policy.json`/sigstore verification is a separate,
   userspace/network-layer check performed at container image pull time. They
-  are complementary but entirely independent security layers; FOBIC and its
+  are complementary but entirely independent security layers; DINO and its
   aurora-dx base use neither the experimental composefs/UKI "sealed image"
   model nor any custom Secure Boot key enrollment — only the standard ostree
-  backend with the base OS's own Secure Boot chain (unrelated to FOBIC's
+  backend with the base OS's own Secure Boot chain (unrelated to DINO's
   cosign key).
 - Verification of the **very first** switch to a new image family. A machine
-  not yet running FOBIC has no FOBIC-specific `policy.json` scope yet, so
+  not yet running DINO has no DINO-specific `policy.json` scope yet, so
   that first pull falls through to `insecureAcceptAnything` regardless of
-  which tool or prefix is used (see [§3](#3-known-bootstrap-gap-first-switch-to-fobic)).
+  which tool or prefix is used (see [§3](#3-known-bootstrap-gap-first-switch-to-dino)).
 
-## 2. FOBIC's concrete setup
+## 2. DINO's concrete setup
 
 ### Signing (CI)
 
@@ -113,7 +113,7 @@ keyless/Fulcio signing. The public half is committed at
 [`cosign.pub`](../cosign.pub) for manual verification:
 
 ```bash
-cosign verify --key cosign.pub ghcr.io/boehringer-ingelheim/fobic:latest
+cosign verify --key cosign.pub ghcr.io/boehringer-ingelheim/dino:latest
 ```
 
 ### Client-side trust (baked into the image)
@@ -121,34 +121,34 @@ cosign verify --key cosign.pub ghcr.io/boehringer-ingelheim/fobic:latest
 Signing alone does not make `bootc switch`/`upgrade` or `rpm-ostree
 rebase`/`upgrade` verify anything — the client's `policy.json` must also be
 configured to require it (see [§1](#1-how-bootc-and-rpm-ostree-handle-signatures)).
-FOBIC bakes this in so that, once a machine is running FOBIC, every
+DINO bakes this in so that, once a machine is running DINO, every
 subsequent update is checked automatically:
 
 - [`build_files/tasks/00-configure-image-signing.sh`](../build_files/tasks/00-configure-image-signing.sh)
   runs at build time and merges a `sigstoreSigned` scope for
-  `ghcr.io/boehringer-ingelheim/fobic` into `/etc/containers/policy.json`,
+  `ghcr.io/boehringer-ingelheim/dino` into `/etc/containers/policy.json`,
   using `jq`. It merges rather than overwrites the file, because the aurora-dx
   base image already ships its own `policy.json` (with `ghcr.io/ublue-os`,
   Red Hat, and toolbx-images scopes) — a static file drop would silently
   clobber that and go stale on every upstream update.
-- [`system_files/usr/lib/pki/containers/fobic.pub`](../system_files/usr/lib/pki/containers/fobic.pub)
-  and [`fobic-backup.pub`](../system_files/usr/lib/pki/containers/fobic-backup.pub)
+- [`system_files/usr/lib/pki/containers/dino.pub`](../system_files/usr/lib/pki/containers/dino.pub)
+  and [`dino-backup.pub`](../system_files/usr/lib/pki/containers/dino-backup.pub)
   are the two trusted public keys (see [§4](#4-incident-response-leaked-signing-key)
   for why there are two).
-- [`system_files/etc/containers/registries.d/fobic.yaml`](../system_files/etc/containers/registries.d/fobic.yaml)
-  tells `containers/image` to look up FOBIC's signature as a sigstore OCI
+-- [`system_files/etc/containers/registries.d/dino.yaml`](../system_files/etc/containers/registries.d/dino.yaml)
+  tells `containers/image` to look up DINO's signature as a sigstore OCI
   attachment (`use-sigstore-attachments: true`), mirroring how
   `registries.d/ublue-os.yaml` is configured for `ghcr.io/ublue-os`.
 
 The resulting merged policy entry:
 
 ```json
-"ghcr.io/boehringer-ingelheim/fobic": [
+"ghcr.io/boehringer-ingelheim/dino": [
   {
     "type": "sigstoreSigned",
     "keyPaths": [
-      "/usr/lib/pki/containers/fobic.pub",
-      "/usr/lib/pki/containers/fobic-backup.pub"
+      "/usr/lib/pki/containers/dino.pub",
+      "/usr/lib/pki/containers/dino-backup.pub"
     ],
     "signedIdentity": { "type": "matchRepository" }
   }
@@ -156,23 +156,23 @@ The resulting merged policy entry:
 ```
 
 Because `/etc` on ostree/bootc systems persists and is 3-way merged across
-updates, once a machine has booted a FOBIC deployment with this policy
+updates, once a machine has booted a DINO deployment with this policy
 present, it stays present (and gets updated) on every subsequent update,
 independent of whether the admin used `bootc` or `rpm-ostree`.
 
-## 3. Known bootstrap gap: first switch to FOBIC
+## 3. Known bootstrap gap: first switch to DINO
 
-A machine switching from Aurora (or any other base) to FOBIC for the very
+A machine switching from Aurora (or any other base) to DINO for the very
 first time is still running the *previous* image's `policy.json`, which has
-no FOBIC-specific scope. That first pull therefore falls through to the
+no DINO-specific scope. That first pull therefore falls through to the
 `docker` transport's `insecureAcceptAnything` catch-all and succeeds without
 any signature check — this is unavoidable from the image side, since the
-trust configuration only exists inside the FOBIC image itself, which hasn't
+trust configuration only exists inside the DINO image itself, which hasn't
 been fetched yet.
 
-From the second update onward (once the machine is running FOBIC and has
+From the second update onward (once the machine is running DINO and has
 adopted its `policy.json`), every `bootc upgrade`/`switch` and `rpm-ostree
-upgrade`/`rebase` to `ghcr.io/boehringer-ingelheim/fobic` is verified.
+upgrade`/`rebase` to `ghcr.io/boehringer-ingelheim/dino` is verified.
 
 Administrators who want the first switch itself verified can manually
 pre-stage the same `policy.json`/`registries.d` snippet on the source system
@@ -184,10 +184,10 @@ until that pre-staging is done (rather than silently succeed).
 
 ### Why there are two keys
 
-`fobic.pub` is the active key (its private half, `SIGNING_SECRET`, is used by
-CI today). `fobic-backup.pub`'s private half is generated up front and kept
+`dino.pub` is the active key (its private half, `SIGNING_SECRET`, is used by
+CI today). `dino-backup.pub`'s private half is generated up front and kept
 **offline** (e.g. in the org's password manager), never used for day-to-day
-signing. Both public keys are baked into every FOBIC image from day one via
+signing. Both public keys are baked into every DINO image from day one via
 `keyPaths` (verification succeeds if a signature matches *either* key).
 
 This exists specifically to avoid a lockout: if we only shipped one key and
@@ -201,7 +201,7 @@ avoids that.
 1. **Stop using the compromised key immediately.** Replace the
    `SIGNING_SECRET` GitHub Actions repository secret with the (previously
    offline) backup private key. No image or client change is needed for this
-   step — every machine already trusts `fobic-backup.pub`, so builds signed
+   step — every machine already trusts `dino-backup.pub`, so builds signed
    with it verify successfully on existing deployments right away.
 2. **Revoke the compromised key.** Ensure the old private key material is
    deleted everywhere it was stored (password manager entry, any local
@@ -215,8 +215,8 @@ avoids that.
 4. **Ship a rotation build.** Generate a *new* backup keypair
    (`cosign generate-key-pair`, keep the private half offline as before).
    Update [`00-configure-image-signing.sh`](../build_files/tasks/00-configure-image-signing.sh)'s
-   `keyPaths` to `[fobic.pub (new active key, formerly the backup), new-fobic-backup.pub]`,
-   and replace the `fobic.pub`/`fobic-backup.pub` files under
+   `keyPaths` to `[dino.pub (new active key, formerly the backup), new-dino-backup.pub]`,
+   and replace the `dino.pub`/`dino-backup.pub` files under
    `system_files/usr/lib/pki/containers/` accordingly. Also update the
    root [`cosign.pub`](../cosign.pub) used for manual verification.
 5. **Wait for fleet propagation before fully retiring the compromised key.**

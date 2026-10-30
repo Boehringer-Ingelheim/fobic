@@ -2,15 +2,15 @@
 
 set -ouex pipefail
 
-### Trust FOBIC's own cosign signature for bootc switch/upgrade verification
+### Trust DINO's own cosign signature for bootc switch/upgrade verification
 ##
 ## The registries.d lookaside config and the public keys are shipped as plain
-## files via system_files/ (see etc/containers/registries.d/fobic.yaml and
-## usr/lib/pki/containers/fobic.pub / fobic-backup.pub).
+## files via system_files/ (see etc/containers/registries.d/dino.yaml and
+## usr/lib/pki/containers/dino.pub / dino-backup.pub).
 ##
-## Two keys are trusted (keyPaths, not keyPath): fobic.pub is the active
-## signing key used by build.yml today. fobic-backup.pub's private half is
-## kept offline and unused. If fobic's primary key is ever compromised, CI
+## Two keys are trusted (keyPaths, not keyPath): dino.pub is the active
+## signing key used by build.yml today. dino-backup.pub's private half is
+## kept offline and unused. If dino's primary key is ever compromised, CI
 ## can start signing with the backup key immediately and existing machines
 ## keep trusting updates without a lockout, since they already trust both.
 ##
@@ -23,12 +23,12 @@ set -ouex pipefail
 command -v jq >/dev/null || dnf5 install -y jq
 
 POLICY=/etc/containers/policy.json
-jq '.transports.docker["ghcr.io/boehringer-ingelheim/fobic"] = [
+jq '.transports.docker["ghcr.io/boehringer-ingelheim/dino"] = [
   {
     "type": "sigstoreSigned",
     "keyPaths": [
-      "/usr/lib/pki/containers/fobic.pub",
-      "/usr/lib/pki/containers/fobic-backup.pub"
+      "/usr/lib/pki/containers/dino.pub",
+      "/usr/lib/pki/containers/dino-backup.pub"
     ],
     "signedIdentity": { "type": "matchRepository" }
   }

@@ -1,10 +1,13 @@
-# FOBIC (Free OBIC)
+<!-- Header -->
+<img src="docs/img/dino.svg" alt="DINO Logo" width="200" align="right"/>
 
-[![FOBIC Build](https://github.com/boehringer-ingelheim/fobic/actions/workflows/build.yml/badge.svg)](https://github.com/boehringer-ingelheim/fobic/actions/workflows/build.yml)
-![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/Boehringer-Ingelheim/fobic)
-[![License](https://img.shields.io/github/license/Boehringer-Ingelheim/fobic)](LICENSE)
+# DINO *(DINO is not OBIC)*
 
-FOBIC is a custom [bootc](https://github.com/bootc-dev/bootc) image built on top of [`ghcr.io/ublue-os/aurora-dx`](https://github.com/ublue-os/aurora-dx), customized and published for boehringer-ingelheim. It's built with the [Universal Blue](https://universal-blue.org/) image tooling (Containerfile + Just + GitHub Actions).
+[![DINO Build](https://github.com/boehringer-ingelheim/dino/actions/workflows/build.yml/badge.svg)](https://github.com/boehringer-ingelheim/dino/actions/workflows/build.yml)
+[![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/Boehringer-Ingelheim/dino)](https://scorecard.dev/viewer/?uri=github.com%2FBoehringer-Ingelheim%2Fdino)
+[![License](https://img.shields.io/github/license/Boehringer-Ingelheim/dino)](LICENSE)
+
+DINO is a custom [bootc](https://github.com/bootc-dev/bootc) image built on top of [`ghcr.io/ublue-os/aurora-dx`](https://github.com/ublue-os/aurora-dx), customized and published for boehringer-ingelheim. It's built with the [Universal Blue](https://universal-blue.org/) image tooling (Containerfile + Just + GitHub Actions).
 
 ## Image Streams
 
@@ -18,19 +21,19 @@ The image is published from a single Containerfile across four branch types. The
 
 Each build also gets dated/SHA tags (e.g. `stable-20260703-a1b2c3d`) for pinning/rollback. Old versions are pruned nightly by [`.github/workflows/cleanup.yml`](.github/workflows/cleanup.yml) according to the retention column above, plus removal of untagged manifests and `feat-*`/`fix-*` tags whose branch no longer exists.
 
-## Installing / Switching to FOBIC
+## Installing / Switching to DINO
 
 From an existing bootc system (Bazzite, Bluefin, Aurora, Fedora Atomic, etc.):
 
 ```bash
 # Production (recommended for most users)
-sudo bootc switch ghcr.io/boehringer-ingelheim/fobic:latest
+sudo bootc switch ghcr.io/boehringer-ingelheim/dino:latest
 
 # Conservative / slower-moving updates
-sudo bootc switch ghcr.io/boehringer-ingelheim/fobic:stable
+sudo bootc switch ghcr.io/boehringer-ingelheim/dino:stable
 
 # Pin to a specific dated build for rollback
-sudo bootc switch ghcr.io/boehringer-ingelheim/fobic:stable-20260703-a1b2c3d
+sudo bootc switch ghcr.io/boehringer-ingelheim/dino:stable-20260703-a1b2c3d
 ```
 
 Reboot to complete the switch. All published images are signed with [cosign](https://github.com/sigstore/cosign); the public key is [`cosign.pub`](cosign.pub). See [`docs/image-signing.md`](docs/image-signing.md) for how verification actually works, its guarantees/limits, and incident response for a leaked key.
@@ -46,13 +49,13 @@ Reboot to complete the switch. All published images are signed with [cosign](htt
 
 Changes flow forward through the streams via normal merges:
 
-```
+```text
 feat/my-feature (testing) → main (latest) → stable
 ```
 
 1. Work happens on a `feat/*` or `fix/*` branch; pushing it publishes a corresponding `feat-{name}` or `fix-{name}` testing image.
-2. PR into `main` — CI builds but does not publish. Once merged, `main` publishes `fobic:latest`.
-3. Promote `main → stable` (merge/PR, 2 reviewers recommended) once `latest` has proven stable — publishes `fobic:stable`.
+2. PR into `main` — CI builds but does not publish. Once merged, `main` publishes `dino:latest`.
+3. Promote `main → stable` (merge/PR, 2 reviewers recommended) once `latest` has proven stable — publishes `dino:stable`.
 
 Because the workflow file and Containerfile are identical across branches, promoting is just a merge — no manual reconfiguration needed per branch.
 
@@ -61,7 +64,7 @@ Because the workflow file and Containerfile are identical across branches, promo
 | Area | Configured in | What it includes |
 |---|---|---|
 | Image build tasks | [`build.sh`](build_files/build.sh), [`tasks/`](build_files/tasks) | Copies [`system_files/`](system_files) into the image, then runs numbered task scripts in order. |
-| Image signature trust | [`00-configure-image-signing.sh`](build_files/tasks/00-configure-image-signing.sh), [`container public keys`](system_files/usr/lib/pki/containers) | Adds FOBIC's signing keys to the container policy so signed FOBIC images can be verified. |
+| Image signature trust | [`00-configure-image-signing.sh`](build_files/tasks/00-configure-image-signing.sh), [`container public keys`](system_files/usr/lib/pki/containers) | Adds DINO's signing keys to the container policy so signed DINO images can be verified. |
 | Browsers and cloud storage | [`01-install-edge-onedrive.sh`](build_files/tasks/01-install-edge-onedrive.sh), [`02-install-paloalto-browser.sh`](build_files/tasks/02-install-paloalto-browser.sh), [`Prisma Browser RPM repo`](system_files/etc/yum.repos.d/prisma-access-browser.repo) | Installs Microsoft Edge as the default browser, Palo Alto Prisma Access Browser as an alternative, and OneDrive. |
 | Display manager | [`98-switch-plasmalogin-for-gdm.sh`](build_files/tasks/98-switch-plasmalogin-for-gdm.sh) | Replaces Plasma Login with GDM. |
 | Entra ID sign-in | [`99-install-himmelblau.sh`](build_files/tasks/99-install-himmelblau.sh), [`himmelblau-brew-ownership`](system_files/usr/libexec/himmelblau/logon.d/himmelblau-brew-ownership) | Installs and configures Himmelblau; on first login, assigns `/home/linuxbrew` to the authenticated user's runtime UID/GID. |
@@ -76,10 +79,10 @@ Requires [`just`](https://just.systems/man/en/introduction.html) and [Podman](ht
 just build
 
 # Build with a specific output tag
-just build fobic latest
+just build dino latest
 
 # Override the base image, e.g. to test against aurora-dx:latest
-just build fobic latest ghcr.io/ublue-os/aurora-dx:latest
+just build dino latest ghcr.io/ublue-os/aurora-dx:latest
 ```
 
 Other useful commands:
@@ -95,7 +98,7 @@ Configuration such as the image name, description, and registry organization liv
 
 ## Disk Images (ISO / QCOW2 / RAW)
 
-[`.github/workflows/build-disk.yml`](.github/workflows/build-disk.yml) builds installable disk images from the published `fobic:latest` container using [bootc-image-builder](https://osbuild.org/docs/bootc/), configured via [`disk_config/disk.toml`](disk_config/disk.toml) and [`disk_config/iso.toml`](disk_config/iso.toml). It can optionally upload results to S3 (`upload-to-s3` input) or attach them as a workflow artifact. Trigger it manually from the Actions tab (`workflow_dispatch`).
+[`.github/workflows/build-disk.yml`](.github/workflows/build-disk.yml) builds installable disk images from the published `dino:latest` container using [bootc-image-builder](https://osbuild.org/docs/bootc/), configured via [`disk_config/disk.toml`](disk_config/disk.toml) and [`disk_config/iso.toml`](disk_config/iso.toml). It can optionally upload results to S3 (`upload-to-s3` input) or attach them as a workflow artifact. Trigger it manually from the Actions tab (`workflow_dispatch`).
 
 See [Building and testing an installer ISO locally](docs/local-installer-testing.md) for the complete GitHub Actions, download, and Fedora/QEMU workflow.
 
@@ -113,11 +116,11 @@ See [Building and testing an installer ISO locally](docs/local-installer-testing
 | [`.github/workflows/cleanup.yml`](.github/workflows/cleanup.yml) | Prunes old GHCR versions per stream retention policy |
 | [`.github/renovate.json5`](.github/renovate.json5) | Automerges base-image digest bumps across streams |
 | [`cosign.pub`](cosign.pub) | Public key to verify image signatures |
-| [`docs/image-signing.md`](docs/image-signing.md) | How bootc/rpm-ostree signature verification works, FOBIC's setup, and key-compromise incident response |
+| [`docs/image-signing.md`](docs/image-signing.md) | How bootc/rpm-ostree signature verification works, DINO's setup, and key-compromise incident response |
 
 ## Community / Upstream
 
-FOBIC is built on the [Universal Blue](https://universal-blue.org/) project's image template tooling. For general questions about the underlying tooling (not FOBIC-specific), see:
+DINO is built on the [Universal Blue](https://universal-blue.org/) project's image template tooling. For general questions about the underlying tooling (not DINO-specific), see:
 
 - [Universal Blue Forums](https://universal-blue.discourse.group/)
 - [Universal Blue Discord](https://discord.gg/WEu6BdFEtp)
