@@ -1,7 +1,6 @@
-<!-- Header -->
-<img src="docs/img/dino.svg" alt="DINO Logo" width="200" align="right"/>
-
 # DINO *(DINO is not OBIC)*
+
+<img src="docs/img/dino.svg" alt="DINO Logo" width="200" align="right"/>
 
 [![DINO Build](https://github.com/boehringer-ingelheim/dino/actions/workflows/build.yml/badge.svg)](https://github.com/boehringer-ingelheim/dino/actions/workflows/build.yml)
 [![OSSF-Scorecard Score](https://img.shields.io/ossf-scorecard/github.com/Boehringer-Ingelheim/dino)](https://scorecard.dev/viewer/?uri=github.com%2FBoehringer-Ingelheim%2Fdino)
