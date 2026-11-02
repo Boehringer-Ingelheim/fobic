@@ -119,7 +119,13 @@ for entry in "${FONT_ENTRIES[@]}"; do
 	downloaded_path="$tmpdir/$output_name"
 
 	# Download exactly the approved public file and verify its checksum before use.
-	curl -fsSL "$url" -o "$downloaded_path"
+	# The source endpoint blocks non-browser clients, so spoof a recent desktop browser.
+	curl -fsSL \
+		-A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0' \
+		-H 'Accept: */*' \
+		-H 'Accept-Language: en-US,en;q=0.9' \
+		-H 'Referer: https://brand.boehringer-ingelheim.com/' \
+		"$url" -o "$downloaded_path"
 	actual_hash="$(sha256sum "$downloaded_path" | awk '{print $1}')"
 	if [[ "$actual_hash" != "$expected_hash" ]]; then
 		echo "Hash mismatch for $output_name: expected $expected_hash, got $actual_hash" >&2
