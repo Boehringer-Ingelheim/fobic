@@ -3,6 +3,11 @@
 set -Eeuox pipefail
 
 OUTPUT_DIR="/usr/local/share/fonts/boehringer-forward"
+if [[ -e /usr/local && ! -d /usr/local ]]; then
+  OUTPUT_DIR="/usr/share/fonts/boehringer-forward"
+elif [[ ! -d /usr/local/share/fonts && -d /usr/share/fonts ]]; then
+  OUTPUT_DIR="/usr/share/fonts/boehringer-forward"
+fi
 
 require_cmd() {
 	if ! command -v "$1" >/dev/null 2>&1; then
@@ -99,6 +104,10 @@ FONT_ENTRIES=(
 
 # Install into a dedicated system font directory and clean up temporary downloads.
 mkdir -p "$OUTPUT_DIR"
+if [[ ! -d "$OUTPUT_DIR" ]]; then
+  echo "Unable to create font directory: $OUTPUT_DIR" >&2
+  exit 1
+fi
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
