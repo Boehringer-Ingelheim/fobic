@@ -1,6 +1,5 @@
 name: Bug report
 description: Report a reproducible problem or regression
-title: ""
 labels:
   - bug
 body:
