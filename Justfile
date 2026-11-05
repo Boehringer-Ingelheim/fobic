@@ -133,18 +133,34 @@ rechunk $target_image=image_name $tag=default_tag:
     set -xeuo pipefail
 
     # TODO: pin chunkah image to hash once mature enough
-    # You may run into space issues on github runenrs as we are making a
-    # complete copy of the image
-    export CHUNKAH_CONFIG_STR=$(podman inspect "${target_image}")
-    podman run --rm --mount=type=image,src="${target_image}",target=/chunkah \
-    -e CHUNKAH_CONFIG_STR quay.io/coreos/chunkah:latest \
-    build \
-    --verbose \
-    --compressed \
-    --max-layers 128 \
-    --prune /sysroot/ \
-    --label ostree.commit- --label ostree.final-diffid- \
-    --tag "${target_image}:${tag}" | podman load
+    # You may run into space issues on github runners as we are making a
+    # complete copy of the image, which likely has no shared layers, unless your
+    # base image is also using chunkah
+    CHUNKAH_CONFIG_FILE="$(mktemp)"
+
+    # You may omit the current directory here if you are confident that you
+    # won't run out of space on /tmp for your image
+    CHUNKAH_OUTPUT_DIR="$(mktemp -d ./"${target_image}"_chunkah_XXXXXX)"
+
+    trap 'rm -f "${CHUNKAH_CONFIG_FILE}"; rm -rf "${CHUNKAH_OUTPUT_DIR}"' EXIT
+    podman inspect "${target_image}:${tag}" > "${CHUNKAH_CONFIG_FILE}"
+
+    podman run --rm \
+      --mount=type=image,src="${target_image}:${tag}",target=/chunkah \
+      -v "${CHUNKAH_CONFIG_FILE}:/chunkah-config.json:ro,Z" \
+      -v "${CHUNKAH_OUTPUT_DIR}:/run/out:Z" \
+      quay.io/coreos/chunkah:latest \
+      build \
+      --verbose \
+      --compressed \
+      --max-layers 256 \
+      --prune /sysroot/ \
+      --label ostree.commit- --label ostree.final-diffid- \
+      --config /chunkah-config.json \
+      --output oci:/run/out/chunked
+
+    CHUNKED_IMAGE="$(podman pull "oci:${CHUNKAH_OUTPUT_DIR}/chunked")"
+    podman tag "${CHUNKED_IMAGE}" "${target_image}:${tag}"
 
 # Split the image for smaller updates (Classical)!
 ostree-rechunk $target_image=image_name $tag=default_tag:
@@ -152,28 +168,23 @@ ostree-rechunk $target_image=image_name $tag=default_tag:
 
     set -xeuo pipefail
 
-    # TODO: This is the only blocker for rootless CI
-    # https://github.com/coreos/rpm-ostree/issues/5346
-    if [[ ! "${UID}" -eq "0" ]]; then
-      echo "This needs to run as root."
-      exit 1
-    fi
+    # Use the already-built local image to avoid pulling from a remote registry
+    RPM_OSTREE_CHUNKER_IMAGE="localhost/${target_image}:${tag}"
 
-    # You can use your own base image here to avoid pulling fedora-bootc
-    RPM_OSTREE_CHUNKER_IMAGE="quay.io/fedora/fedora-bootc:latest"
+    GRAPHROOT="$(podman info --format '{{ '{{.Store.GraphRoot}}' }}')"
 
-    podman run --rm \
-      --pull=newer \
-      --privileged \
-      -v "/var/lib/containers:/var/lib/containers" \
+    podman run --rm --pull=never --privileged \
+      --mount=type=image,src="${target_image}:${tag}",target=/rpm-ostree \
+      --mount=type=bind,src=${GRAPHROOT},target=/run/host-container-storage,rw \
+      --mount=type=tmpfs,target=/run/rpm-ostree-storage \
       --entrypoint /usr/bin/rpm-ostree \
       "${RPM_OSTREE_CHUNKER_IMAGE}" \
       compose build-chunked-oci \
       --max-layers 127 \
       --format-version=2 \
       --bootc \
-      --from "localhost/${target_image}:${tag}" \
-      --output containers-storage:"localhost/${target_image}:${tag}"
+      --rootfs /rpm-ostree \
+      --output "containers-storage:[overlay@/run/host-container-storage+/run/rpm-ostree-storage]localhost/${target_image}:${tag}"
 
 # Generate Default Tag
 [group('Utility')]

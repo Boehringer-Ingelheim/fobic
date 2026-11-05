@@ -104,23 +104,14 @@ jobs:
             ${STREAM_TAG} \
             ${BASE_IMAGE}
 
-      # This is optional, this provides smaller delta updates
-      - name: Rechunk with rpm-ostree
+      # Rechunk the image into deterministic component layers for smaller delta updates
+      # https://github.com/coreos/chunkah
+      - name: Rechunk with Chunkah
         id: rechunk
         run: |
-          sudo -E $(command -v just) ostree-rechunk \
+          sudo -E $(command -v just) rechunk \
             ${IMAGE_NAME} \
             ${STREAM_TAG}
-
-      # If you are feeling adventurous, use the new distro agnostic rechunker
-      # https://github.com/coreos/chunkah
-      # You can delete the Rechunk with rpm-ostree portion then if you use this
-      #- name: Rechunk with Chunkah
-      #  id: rechunk
-      #  run: |
-      #    sudo -E $(command -v just) rechunk \
-      #      ${IMAGE_NAME} \
-      #      ${STREAM_TAG}
 
       - name: Generate Build Tags
         id: gen-build-tags
