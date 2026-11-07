@@ -15,7 +15,7 @@ The image is published from a single Containerfile across several branch types. 
 | Branch | Base image | Published tag | Retention | Purpose |
 | --- | --- | --- | --- | --- |
 | `main` | `ghcr.io/ublue-os/aurora-dx:stable` (pinned) | `latest` | 2 images | Integration testing |
-| `stable` | `ghcr.io/ublue-os/aurora-dx:stable` (pinned) | `stable` | 2 images | Conservative production (~weeks) |
+| `stable` | `ghcr.io/ublue-os/aurora-dx:stable` (pinned) | `stable` | 2 images | Production (recommended) |
 | `feat/*`, `fix/*` | `ghcr.io/ublue-os/aurora-dx:stable` (pinned) | `feat-{name}`, `fix-{name}` | 1 image | Feature/fix testing |
 
 Each build also gets dated/SHA tags (e.g. `stable-20260703-a1b2c3d`) for pinning/rollback. Old versions are pruned nightly by [`.github/workflows/cleanup.yml`](.github/workflows/cleanup.yml) according to the retention column above, plus removal of untagged manifests and `feat-*`/`fix-*` tags whose branch no longer exists.
@@ -26,10 +26,10 @@ From an existing bootc system (Bazzite, Bluefin, Aurora, Fedora Atomic, etc.):
 
 ```bash
 # Production (recommended for most users)
-sudo bootc switch ghcr.io/boehringer-ingelheim/dino:latest
-
-# Conservative / slower-moving updates
 sudo bootc switch ghcr.io/boehringer-ingelheim/dino:stable
+
+# Integration testing / newer changes first
+sudo bootc switch ghcr.io/boehringer-ingelheim/dino:latest
 
 # Pin to a specific dated build for rollback
 sudo bootc switch ghcr.io/boehringer-ingelheim/dino:stable-20260703-a1b2c3d
