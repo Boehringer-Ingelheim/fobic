@@ -93,12 +93,16 @@ sudoif command *args:
 #
 
 # Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag $base_image="ghcr.io/ublue-os/aurora-dx:stable":
+build $target_image=image_name $tag=default_tag $base_image="":
     #!/usr/bin/env bash
 
     set -euox pipefail
 
-    BUILD_ARGS=("--build-arg" "BASE_IMAGE=${base_image}")
+    # Without an explicit base_image, the digest-pinned ARG default in the Containerfile is used.
+    BUILD_ARGS=()
+    if [[ -n "${base_image}" ]]; then
+        BUILD_ARGS+=("--build-arg" "BASE_IMAGE=${base_image}")
+    fi
     LABELS=()
     if [[ -z "$(git status -s)" ]]; then
         GIT_SHA=$(git rev-parse --short HEAD)

@@ -58,22 +58,12 @@ jobs:
 
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
 
-      # The base image and published stream tag are derived from the branch name so the
-      # Containerfile itself can stay identical across main/latest/stable/feat/fix branches.
-      - name: Resolve base image
-        id: resolve-base
+      # The base image is not set here: every stream builds from the digest-pinned
+      # BASE_IMAGE default in the Containerfile, which Renovate keeps current.
+      # The published stream tag is derived from the branch name.
+      - name: Check signing key matches cosign.pub
         run: |
-          BRANCH="${GITHUB_REF_NAME}"
-          case "${BRANCH}" in
-            stable) BASE_TAG="stable" ;;
-            main)   BASE_TAG="stable" ;;
-            feat/*) BASE_TAG="stable" ;;
-            fix/*)  BASE_TAG="stable" ;;
-            *)      BASE_TAG="stable" ;;
-          esac
-          BASE_IMAGE="ghcr.io/ublue-os/aurora-dx:${BASE_TAG}"
-
-          echo "BASE_IMAGE=${BASE_IMAGE}" >> $GITHUB_ENV
+          cmp cosign.pub system_files/usr/lib/pki/containers/dino.pub
 
       - name: Resolve stream tag
         id: resolve-stream
@@ -101,8 +91,7 @@ jobs:
         run: |
           sudo -E $(command -v just) build \
             ${IMAGE_NAME} \
-            ${STREAM_TAG} \
-            ${BASE_IMAGE}
+            ${STREAM_TAG}
 
       # This is optional, this provides smaller delta updates
       - name: Rechunk with rpm-ostree

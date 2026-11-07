@@ -22,15 +22,38 @@ set -ouex pipefail
 
 command -v jq >/dev/null || dnf5 install -y jq
 
+IMAGE_REF="ghcr.io/boehringer-ingelheim/dino"
+KEY_PATHS=(
+  /usr/lib/pki/containers/dino.pub
+  /usr/lib/pki/containers/dino-backup.pub
+)
+
+# A keyPath that doesn't exist makes every signature check for this image fail,
+# which breaks bootc switch/upgrade on every machine. Refuse to build that.
+for key in "${KEY_PATHS[@]}"; do
+  if [[ ! -s "${key}" ]]; then
+    echo "Error: signing key ${key} is missing or empty." >&2
+    exit 1
+  fi
+done
+
+if ! grep -qF "${IMAGE_REF}:" /etc/containers/registries.d/*.yaml; then
+  echo "Error: no registries.d lookaside config for ${IMAGE_REF}." >&2
+  exit 1
+fi
+
 POLICY=/etc/containers/policy.json
-jq '.transports.docker["ghcr.io/boehringer-ingelheim/dino"] = [
-  {
-    "type": "sigstoreSigned",
-    "keyPaths": [
-      "/usr/lib/pki/containers/dino.pub",
-      "/usr/lib/pki/containers/dino-backup.pub"
-    ],
-    "signedIdentity": { "type": "matchRepository" }
-  }
-]' "${POLICY}" > "${POLICY}.tmp"
+jq --arg ref "${IMAGE_REF}" \
+  --argjson keys "$(printf '%s\n' "${KEY_PATHS[@]}" | jq -R . | jq -s .)" \
+  '.transports.docker[$ref] = [
+    {
+      "type": "sigstoreSigned",
+      "keyPaths": $keys,
+      "signedIdentity": { "type": "matchRepository" }
+    }
+  ]' "${POLICY}" > "${POLICY}.tmp"
 mv "${POLICY}.tmp" "${POLICY}"
+
+# Fail if the policy we just wrote doesn't list exactly the keys above.
+jq -e --arg ref "${IMAGE_REF}" --argjson n "${#KEY_PATHS[@]}" \
+  '.transports.docker[$ref][0].keyPaths | length == $n' "${POLICY}" >/dev/null

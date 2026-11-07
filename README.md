@@ -10,13 +10,13 @@ DINO is a custom [bootc](https://github.com/bootc-dev/bootc) image built on top 
 
 ## Image Streams
 
-The image is published from a single Containerfile across four branch types. The base image and the published tag are resolved automatically by CI based on the branch name — the Containerfile itself is identical across branches.
+The image is published from a single Containerfile across several branch types. Every stream builds on the same digest-pinned `ghcr.io/ublue-os/aurora-dx:stable` base from the Containerfile; CI only derives the published tag from the branch name.
 
-| Branch   | Base image                            | Published tag | Retention        | Purpose                           |
-|----------|----------------------------------------|---------------|-------------------|------------------------------------|
-| `main`   | `ghcr.io/ublue-os/aurora-dx:latest`   | `latest`     | 2 images          | Integration testing               |
-| `stable` | `ghcr.io/ublue-os/aurora-dx:stable`   | `stable`      | 2 images          | Conservative production (~weeks)  |
-| `feat/*`, `fix/*` | `ghcr.io/ublue-os/aurora-dx:latest` | `feat-{name}`, `fix-{name}` | 1 image | Feature/fix testing |
+| Branch | Base image | Published tag | Retention | Purpose |
+| --- | --- | --- | --- | --- |
+| `main` | `ghcr.io/ublue-os/aurora-dx:stable` (pinned) | `latest` | 2 images | Integration testing |
+| `stable` | `ghcr.io/ublue-os/aurora-dx:stable` (pinned) | `stable` | 2 images | Production (recommended) |
+| `feat/*`, `fix/*` | `ghcr.io/ublue-os/aurora-dx:stable` (pinned) | `feat-{name}`, `fix-{name}` | 1 image | Feature/fix testing |
 
 Each build also gets dated/SHA tags (e.g. `stable-20260703-a1b2c3d`) for pinning/rollback. Old versions are pruned nightly by [`.github/workflows/cleanup.yml`](.github/workflows/cleanup.yml) according to the retention column above, plus removal of untagged manifests and `feat-*`/`fix-*` tags whose branch no longer exists.
 
@@ -26,10 +26,10 @@ From an existing bootc system (Bazzite, Bluefin, Aurora, Fedora Atomic, etc.):
 
 ```bash
 # Production (recommended for most users)
-sudo bootc switch ghcr.io/boehringer-ingelheim/dino:latest
-
-# Conservative / slower-moving updates
 sudo bootc switch ghcr.io/boehringer-ingelheim/dino:stable
+
+# Integration testing / newer changes first
+sudo bootc switch ghcr.io/boehringer-ingelheim/dino:latest
 
 # Pin to a specific dated build for rollback
 sudo bootc switch ghcr.io/boehringer-ingelheim/dino:stable-20260703-a1b2c3d
@@ -39,9 +39,9 @@ Reboot to complete the switch. All published images are signed with [cosign](htt
 
 ## How the Build Works
 
-- [`Containerfile`](Containerfile) declares `ARG BASE_IMAGE=ghcr.io/ublue-os/aurora-dx:stable` before the first `FROM`, then does `FROM ${BASE_IMAGE}`. Locally, this default is used when the arg isn't overridden.
-- [`.github/workflows/build.yml`](.github/workflows/build.yml) resolves `BASE_IMAGE` and `STREAM_TAG` from the branch name (`resolve-base` / `resolve-stream` steps) and passes them into `just build`, so the same workflow file drives every stream.
-- [`.github/renovate.json5`](.github/renovate.json5) tracks `main`, `latest`, and `stable` as base branches and auto-merges `aurora-dx` digest bumps every 6 hours, keeping all streams current with upstream without a nightly rebuild cron.
+- [`Containerfile`](Containerfile) declares `ARG BASE_IMAGE=ghcr.io/ublue-os/aurora-dx:stable@sha256:…` before the first `FROM`, then does `FROM ${BASE_IMAGE}`. CI and `just build` use this pinned default unless a base image is passed explicitly.
+- [`.github/workflows/build.yml`](.github/workflows/build.yml) resolves `STREAM_TAG` from the branch name (`resolve-stream` step) and passes it into `just build`, so the same workflow file drives every stream.
+- [`.github/renovate.json5`](.github/renovate.json5) tracks `main` and auto-merges `aurora-dx` digest bumps to the Containerfile every 6 hours; each merge triggers a new build.
 - Publishing (push/tag/sign) only happens on `push` events (not on pull requests), so PRs build and validate but never publish.
 
 ### Branch Promotion
@@ -74,7 +74,7 @@ Because the workflow file and Containerfile are identical across branches, promo
 Requires [`just`](https://just.systems/man/en/introduction.html) and [Podman](https://podman.io/) (both preinstalled on Universal Blue images).
 
 ```bash
-# Build with the default base image (aurora-dx:stable)
+# Build with the digest-pinned default base image from the Containerfile
 just build
 
 # Build with a specific output tag

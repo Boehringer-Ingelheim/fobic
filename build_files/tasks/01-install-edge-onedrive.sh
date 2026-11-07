@@ -4,7 +4,7 @@ set -ouex pipefail
 
 ### Install packages
 
-# Microsoft Edge key import, repo already in system_files/etc/yum.repos.d/microsoft-edge.repo
+# Microsoft Edge key import, repo already in system_files/etc/yum.repos.d/microsoft.repo (gpgcheck=1)
 rpm --import https://packages.microsoft.com/keys/microsoft.asc
 
 # this installs edge and onedrive

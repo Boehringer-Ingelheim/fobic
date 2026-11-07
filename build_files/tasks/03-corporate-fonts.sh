@@ -2,12 +2,9 @@
 
 set -Eeuox pipefail
 
-OUTPUT_DIR="/usr/local/share/fonts/boehringer-forward"
-if [[ -e /usr/local && ! -d /usr/local ]]; then
-  OUTPUT_DIR="/usr/share/fonts/boehringer-forward"
-elif [[ ! -d /usr/local/share/fonts && -d /usr/share/fonts ]]; then
-  OUTPUT_DIR="/usr/share/fonts/boehringer-forward"
-fi
+# Always install under /usr: on bootc images /usr/local links to /var/usrlocal,
+# and /var is only seeded on first install, so fonts there would never update.
+OUTPUT_DIR="/usr/share/fonts/boehringer-forward"
 
 require_cmd() {
 	if ! command -v "$1" >/dev/null 2>&1; then
