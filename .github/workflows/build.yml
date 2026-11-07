@@ -58,6 +58,10 @@ jobs:
 
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
 
+      - name: Check signing key matches cosign.pub
+        run: |
+          cmp cosign.pub system_files/usr/lib/pki/containers/dino.pub
+
       # The base image and published stream tag are derived from the branch name so the
       # Containerfile itself can stay identical across main/latest/stable/feat/fix branches.
       - name: Resolve base image
